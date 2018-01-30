@@ -1,3 +1,4 @@
+#SERVER
 import socket
 
 def Main():
@@ -22,3 +23,5 @@ def Main():
 
     conn.close()
 
+if __name__ == '__main__':
+    Main()

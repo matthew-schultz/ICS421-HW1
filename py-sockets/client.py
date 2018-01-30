@@ -1,4 +1,7 @@
-mport socket
+#CLIENT
+import socket
+import sqlite3
+from sqlite3 import Error
 
 def Main():
         host = '172.17.0.2'
@@ -7,7 +10,7 @@ def Main():
         mySocket = socket.socket()
         mySocket.connect((host,port))
 
-        message = "Hello from client program!"
+        message = "drop tables lol"
 
         print ('Client: send ' + str(message))
         mySocket.send(message.encode())
@@ -18,5 +21,5 @@ def Main():
         mySocket.close()
 
 if __name__ == '__main__':
-    Main()
+	Main()
 
