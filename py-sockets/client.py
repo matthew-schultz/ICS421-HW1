@@ -1,16 +1,16 @@
 #CLIENT
 import socket
 import sqlite3
-from sqlite3 import Error
+#from sqlite3 import Error
 
 def Main():
-        host = '172.17.0.2'
+        host = '172.17.0.3'
         port = 5000
 
         mySocket = socket.socket()
         mySocket.connect((host,port))
 
-        message = "drop tables lol"
+        message = '''CREATE TABLE if not exists plants(commonName text, plantStatus text, dateAdded date)'''
 
         print ('Client: send ' + str(message))
         mySocket.send(message.encode())

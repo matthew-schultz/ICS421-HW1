@@ -1,5 +1,6 @@
-#SERVER
+#SERVER.PY
 import socket
+import sqlite3
 
 def Main():
     host = ""
@@ -16,10 +17,25 @@ def Main():
         return
     print ("Server: recv " + str(data))
 
-    data = "Hello from Server"
+    response = "Hello from Server"
 
-    print ("Server: send " + str(data))
-    conn.send(data.encode())
+    sqlconn = sqlite3.connect('plants.db')
+    c = sqlconn.cursor()
+
+    # Create table
+
+    c.execute(data)
+    
+    tableExistsMsg = 'table plants does not exist'
+    tb_exists = "SELECT name FROM sqlite_master WHERE type='table' AND name='plants'"
+    if sqlconn.execute(tb_exists).fetchone():
+        tableExistsMsg = 'table plants exists'
+    
+    response = tableExistsMsg
+    print(response)
+
+    print ("Server: send " + str(response))
+    conn.send(response.encode())
 
     conn.close()
 
