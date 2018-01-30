@@ -3,6 +3,7 @@ import socket
 import sqlite3
 import sys
 
+
 def Main():
     if(len(sys.argv) >= 3):
         #host = sys.argv[1]
@@ -19,8 +20,6 @@ def Main():
         if not ddlSQL:
             return
         print ("parDBd: recv " + str(ddlSQL))
-
-    # response = "Hello from parDBD"
 
         sqlConn = sqlite3.connect('plants.db')
         c = sqlConn.cursor()
@@ -44,5 +43,10 @@ def Main():
     else:
         print("parDBd: ERROR need at least 3 arguments to run properly (e.g. \"python3 parDBd.py 171.0.0.2 5000\"")
 
+
 if __name__ == '__main__':
-    Main()
+    try:
+        Main()
+    except OSError:
+        print('failed due to OSError')
+
