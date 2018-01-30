@@ -1,1 +1,1 @@
-CREATE TABLE if not exists plants(commonName text, plantStatus text, dateAdded date);
+CREATE TABLE if not exists PLANTS(commonName text, plantStatus text, dateAdded date);
