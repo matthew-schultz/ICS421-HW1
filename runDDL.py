@@ -20,7 +20,7 @@ def CreateNodeDatabase(ddlSQL, dbhost, dbport, nodeNum):
         print('runDDL.py: recv ' + data)
         if(data == 'success'):
             catSQL = 'INSERT INTO dtables VALUES ("","","' + dbhost + '","","",0,' + str(nodeNum) + ',"","","")'
-            print('catSQL is: ' + catSQL)
+            print('runDDL.py: ' + catSQL)
             # print('')
     except OSError:
         print('runDDL.py: failed to connect to host ' + dbhost)
@@ -60,7 +60,7 @@ def Main():
         ddlfile = sys.argv[2]
         
         configDict = ParseConfig(clustercfg)
-        print('ParseConfig returned ' + str(configDict))
+        # print('ParseConfig returned ' + str(configDict))
 
         #read ddlfile as a string to be executed as sql
         with open(ddlfile, 'r') as myfile:
@@ -68,7 +68,7 @@ def Main():
         # print("sql string is " + ddlSQL)
 
         catMsg = CreateCatalog()
-        print('Catalog creation: ' + catMsg)
+        print('runDDL.py: ' + catMsg)
 
         #CreateDatabase(3,  ddlSQL)
         for currentNodeNum in range(1, int(configDict['numnodes']) + 1):
@@ -87,10 +87,6 @@ def ParseConfig(clustercfg):
     config = configparser.ConfigParser()
     config.read(clustercfg)
     print("Config has been read")
-    '''print(config.get('clustercfg', 'numnodes'))
-    print(config.get('clustercfg', 'catalog.hostname'))
-    print(config.get('clustercfg', 'node1.hostname'))
-    print(config.get('clustercfg', 'node2.hostname'))'''
 
     configDict = {'numnodes': config.get('clustercfg', 'numnodes'),
             'catalog.hostname': config.get('clustercfg', 'catalog.hostname'),
