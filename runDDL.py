@@ -4,11 +4,9 @@ import socket
 import sqlite3
 import sys
 from threading import Thread
-
+# import Error
 
 def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum):
-    #host = '172.17.0.' + str(x)
-    #port = 5000
     print('runDDL.py: connecting to host ' + dbhost)
 
     mySocket = socket.socket()
@@ -30,7 +28,7 @@ def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum):
                 catSQL = 'TRUNCATE TABLE tablename;'
                 catSQL = 'INSERT INTO dtables VALUES ("'+ tname +'","","' + dbhost + '","","",0,' + str(nodeNum) + ',NULL,NULL,NULL)'
             runSQL(catSQL)
-            print('runDDL.py: ' + catSQL)
+            # print('runDDL.py: ' + catSQL)
             # print('')
     except OSError:
         print('runDDL.py: failed to connect to host ' + dbhost)
@@ -54,8 +52,6 @@ def SQLIsCreate(sql):
     isInsert = False
     # remove leading whitespace from sql string and split
     sqlArray = sql.lstrip().split(" ")
-    # print(str(sqlArray))
-    # print(sqlArray[0].upper())
     if sqlArray[0].upper() == 'CREATE':
         isInsert = True
     return isInsert
@@ -95,17 +91,13 @@ def getTname(data):
     dataArray = data.split(' ')
     count = 0
     for d in dataArray:
-        # print('d is ' + d)
         if d.upper() == 'TABLE':
-            print('d matches TABLE')
-            #print('dataArray[count+1] is ' + dataArray[count+1])
+            # check if table name will come after an 'if exists...' statement
             if dataArray[count + 1] == 'if':
-                 print('slot after d matches if')
-                 print('dataArray[count+4] is ' + dataArray[count+4])
                  tname = dataArray[count+4]
             else: tname = dataArray[count + 1]
         count = count + 1   
-    tname = tname.split('(')[0]
+    tname = tname.split('(')[0] #remove trailing '('
     return tname
 
 
