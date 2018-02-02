@@ -12,10 +12,10 @@ def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum):
     mySocket = socket.socket()
     try:
         mySocket.connect((dbhost, dbport))
-        print(__file__ + ': send ' + str(ddlSQL))
+        print('runDDL.py: send ' + str(ddlSQL))
         mySocket.send(ddlSQL.encode())
         data = str(mySocket.recv(1024).decode())
-        print(__file__ + ': recv ' + data)
+        print('runDDL.py: recv ' + data + ' from host ' + dbhost)
 
         if(data == 'success'):
             tname = getTname(ddlSQL)
@@ -36,7 +36,7 @@ def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum):
 
 
 def runSQL(sql):
-    print(__file__ + ': executing sql statement ' + sql) 
+    print('runDDL.py: executing sql statement ' + sql) 
     try:
         sqlConn = sqlite3.connect('catalog.db')
         c = sqlConn.cursor()
@@ -44,9 +44,10 @@ def runSQL(sql):
         print(str(c.fetchall()))
         sqlConn.commit()
         sqlConn.close()
-    except Error as e:
+    except sqlite3.IntegrityError as e:
         print(e)
-
+    except sqlite3.OperationalError as e:
+        print(e)
 
 def SQLIsCreate(sql):
     isInsert = False

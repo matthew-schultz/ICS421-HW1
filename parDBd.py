@@ -2,6 +2,7 @@
 import socket
 import sqlite3
 import sys
+#import sqlite3.OperationalError
 
 
 def Main():
@@ -28,18 +29,22 @@ def Main():
         tableCreatedMsg = ''
         try:
             c.execute(ddlSQL)
-        except Error:
-            tableCreatedMsg = 'failed'
+        except sqlite3.OperationalError as e:
+            print(e)
+            tableCreatedMsg = 'failure'
         else:
             tableCreatedMsg = 'success'
-    
+        sqlConn.commit()
+        sqlConn.close()
+
         response = tableCreatedMsg
         print(response)
 
-        print ("parDBd: send " + str(response))
+        print ("parDBd: send response " + str(response))
         runDDLConn.send(response.encode())
 
         runDDLConn.close()
+        mySocket.close()
     else:
         print("parDBd: ERROR need at least 3 arguments to run properly (e.g. \"python3 parDBd.py 171.0.0.2 5000\"")
 
@@ -47,6 +52,7 @@ def Main():
 if __name__ == '__main__':
     try:
         Main()
-    except OSError:
-        print('failed due to OSError; please retry in a minute')
+    except OSError as e:
+        print('failed due to OSError; please retry in a minute\n' + str(e))
+
 
