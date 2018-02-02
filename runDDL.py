@@ -60,7 +60,7 @@ def Main():
         ddlfile = sys.argv[2]
         
         configDict = ParseConfig(clustercfg)
-        # print('ParseConfig returned ' + str(configDict))
+        '''# print('ParseConfig returned ' + str(configDict))
 
         #read ddlfile as a string to be executed as sql
         with open(ddlfile, 'r') as myfile:
@@ -77,23 +77,46 @@ def Main():
             t = Thread(target=CreateNodeDatabase, args=(ddlSQL, dbhost, dbport, currentNodeNum, ))
             t.start()
             # create a database in x container
-            # CreateDatabase(ddlSQL, dbhost, dbport)
+            # CreateDatabase(ddlSQL, dbhost, dbport)'''
     else:
           print("runDDL.py: ERROR need at least 3 arguments to run properly (e.g. \"python3 runDDL.py cluster.cfg plants.sql\"")
 
 
 
 def ParseConfig(clustercfg):
-    config = configparser.ConfigParser()
+    '''config = configparser.ConfigParser()
     config.read(clustercfg)
     print("Config has been read")
+
+
 
     configDict = {'numnodes': config.get('clustercfg', 'numnodes'),
             'catalog.hostname': config.get('clustercfg', 'catalog.hostname'),
             'node1.hostname': config.get('clustercfg', 'node1.hostname'),
             'node2.hostname': config.get('clustercfg', 'node2.hostname'),
-            'port': config.get('clustercfg', 'port')}
+            'port': config.get('clustercfg', 'port')}'''
+    file = open(clustercfg)
+    content = file.read()
+    configArray = content.split("\n")
+    configList = []
+    configDict = {}
+    for config in configArray:
+        if config:
+            #print(str(config))
+            c = config.split("=")
+            print (c[0] + ' is ' + c[1])
+            configKey = c[0]
+            configValue = c[1]
+            if('node' in configKey and 'hostname' in configKey):
+                print('configKey has node hostname')
+                configValue = configValue.split(":")[0]
+                print('configValue is ' + configValue)
+        '''#configList.append(c)[1]
+                print (c[0] + '=' + c[1])
+                configDict[c[0]] = c[1]'''
 
+    # print ('cfg dictionary is ' + configDict)
+    # file.close()
     return configDict
 
 
