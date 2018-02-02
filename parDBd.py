@@ -6,8 +6,8 @@ import sys
 
 def Main():
     if(len(sys.argv) >= 3):
-        #host = sys.argv[1]
-        host = ''
+        host = sys.argv[1]
+        #host = ''
         port = int(sys.argv[2])
 
         mySocket = socket.socket()

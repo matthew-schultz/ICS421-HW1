@@ -18,7 +18,9 @@ def CreateNodeDatabase(ddlSQL, dbhost, dbport, nodeNum):
         mySocket.send(ddlSQL.encode())
         data = str(mySocket.recv(1024).decode())
         print('runDDL.py: recv ' + data)
+
         if(data == 'success'):
+            tname = getTname(ddlSQL)
             catSQL = 'INSERT INTO dtables VALUES ("","","' + dbhost + '","","",0,' + str(nodeNum) + ',"","","")'
             print('runDDL.py: ' + catSQL)
             # print('')
@@ -52,6 +54,14 @@ def CreateCatalog():
         tableCreatedMsg = 'success'    
     return tableCreatedMsg
 
+def getTname(data):
+    tname = ''
+    
+    dataArray = data.split(' ')
+    for d in dataArray:
+        print('d is ' + d)
+
+    return tname
 
 def Main():
     #get command line arguments
@@ -60,7 +70,7 @@ def Main():
         ddlfile = sys.argv[2]
         
         configDict = ParseConfig(clustercfg)
-        '''# print('ParseConfig returned ' + str(configDict))
+        # print('ParseConfig returned ' + str(configDict))
 
         #read ddlfile as a string to be executed as sql
         with open(ddlfile, 'r') as myfile:
@@ -73,11 +83,12 @@ def Main():
         #CreateDatabase(3,  ddlSQL)
         for currentNodeNum in range(1, int(configDict['numnodes']) + 1):
             dbhost = configDict['node' + str(currentNodeNum) + '.hostname']
-            dbport = int(configDict['port'])
+            dbport = int(configDict['node' + str(currentNodeNum) + '.port'])
+            # print('will connect to node' + str(currentNodeNum) + ' at IP:' + dbhost + ' and port:' + str(dbport))
             t = Thread(target=CreateNodeDatabase, args=(ddlSQL, dbhost, dbport, currentNodeNum, ))
             t.start()
             # create a database in x container
-            # CreateDatabase(ddlSQL, dbhost, dbport)'''
+            # CreateNodeDatabase(ddlSQL, dbhost, dbport)
     else:
           print("runDDL.py: ERROR need at least 3 arguments to run properly (e.g. \"python3 runDDL.py cluster.cfg plants.sql\"")
 
@@ -98,25 +109,36 @@ def ParseConfig(clustercfg):
     file = open(clustercfg)
     content = file.read()
     configArray = content.split("\n")
-    configList = []
+    # configList = []
     configDict = {}
     for config in configArray:
         if config:
-            #print(str(config))
             c = config.split("=")
             print (c[0] + ' is ' + c[1])
             configKey = c[0]
             configValue = c[1]
-            if('node' in configKey and 'hostname' in configKey):
-                print('configKey has node hostname')
-                configValue = configValue.split(":")[0]
+            if(('node' in configKey or 'catalog' in configKey) and 'hostname' in configKey):
+                #print('configKey has node hostname')
+                nodename = configKey.split(".")[0]
+                hostname = configValue.split(":")
+                configIP = hostname[0]
+                configPort = hostname[1].split("/")[0]
+                configDb = hostname[1].split("/")[1]
+                '''print('nodename is ' + nodename)
                 print('configValue is ' + configValue)
+                print('configIP is ' + configIP)
+                print('configPort is ' + configPort)
+                print('configDb is ' + configDb)'''        
+                configDict[nodename + '.port'] = configPort
+                configDict[nodename + '.db'] = configDb
+                configValue = configIP
+            configDict[configKey]=configValue
         '''#configList.append(c)[1]
                 print (c[0] + '=' + c[1])
                 configDict[c[0]] = c[1]'''
 
-    # print ('cfg dictionary is ' + configDict)
-    # file.close()
+    # print ('cfg dictionary is ' + str(configDict))
+    file.close()
     return configDict
 
 
