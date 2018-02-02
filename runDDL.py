@@ -6,7 +6,7 @@ import sys
 from threading import Thread
 
 
-def CreateNodeDatabase(ddlSQL, dbhost, dbport, nodeNum):
+def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum):
     #host = '172.17.0.' + str(x)
     #port = 5000
     print('runDDL.py: connecting to host ' + dbhost)
@@ -14,19 +14,51 @@ def CreateNodeDatabase(ddlSQL, dbhost, dbport, nodeNum):
     mySocket = socket.socket()
     try:
         mySocket.connect((dbhost, dbport))
-        print('runDDL.py: send ' + str(ddlSQL))
+        print(__file__ + ': send ' + str(ddlSQL))
         mySocket.send(ddlSQL.encode())
         data = str(mySocket.recv(1024).decode())
-        print('runDDL.py: recv ' + data)
+        print(__file__ + ': recv ' + data)
 
         if(data == 'success'):
             tname = getTname(ddlSQL)
-            catSQL = 'INSERT INTO dtables VALUES ("","","' + dbhost + '","","",0,' + str(nodeNum) + ',"","","")'
+            print('tname is ' + tname)
+
+            catSQL = 'DELETE FROM dtables WHERE nodeid='+ str(nodeNum) + ';'            
+
+            if SQLIsCreate(ddlSQL):
+                print ('ddlSQL is a create statement')
+                catSQL = 'TRUNCATE TABLE tablename;'
+                catSQL = 'INSERT INTO dtables VALUES ("'+ tname +'","","' + dbhost + '","","",0,' + str(nodeNum) + ',NULL,NULL,NULL)'
+            runSQL(catSQL)
             print('runDDL.py: ' + catSQL)
             # print('')
     except OSError:
         print('runDDL.py: failed to connect to host ' + dbhost)
     mySocket.close()
+
+
+def runSQL(sql):
+    print(__file__ + ': executing sql statement ' + sql) 
+    try:
+        sqlConn = sqlite3.connect('catalog.db')
+        c = sqlConn.cursor()
+        c.execute(sql)
+        print(str(c.fetchall()))
+        sqlConn.commit()
+        sqlConn.close()
+    except Error as e:
+        print(e)
+
+
+def SQLIsCreate(sql):
+    isInsert = False
+    # remove leading whitespace from sql string and split
+    sqlArray = sql.lstrip().split(" ")
+    # print(str(sqlArray))
+    # print(sqlArray[0].upper())
+    if sqlArray[0].upper() == 'CREATE':
+        isInsert = True
+    return isInsert
 
 
 def CreateCatalog():
@@ -49,19 +81,33 @@ def CreateCatalog():
     try:
         c.execute(catSQL)
     except Error:
-        tableCreatedMsg = 'failed'
+        tableCreatedMsg = 'failure'
     else:
-        tableCreatedMsg = 'success'    
+        tableCreatedMsg = 'success'
+    sqlConn.commit()
+    sqlConn.close()
     return tableCreatedMsg
+
 
 def getTname(data):
     tname = ''
     
     dataArray = data.split(' ')
+    count = 0
     for d in dataArray:
-        print('d is ' + d)
-
+        # print('d is ' + d)
+        if d.upper() == 'TABLE':
+            print('d matches TABLE')
+            #print('dataArray[count+1] is ' + dataArray[count+1])
+            if dataArray[count + 1] == 'if':
+                 print('slot after d matches if')
+                 print('dataArray[count+4] is ' + dataArray[count+4])
+                 tname = dataArray[count+4]
+            else: tname = dataArray[count + 1]
+        count = count + 1   
+    tname = tname.split('(')[0]
     return tname
+
 
 def Main():
     #get command line arguments
@@ -78,19 +124,17 @@ def Main():
         # print("sql string is " + ddlSQL)
 
         catMsg = CreateCatalog()
-        print('runDDL.py: ' + catMsg)
+        print(__file__ + ': CreateCatalog() returned: ' + catMsg)
 
         #CreateDatabase(3,  ddlSQL)
         for currentNodeNum in range(1, int(configDict['numnodes']) + 1):
             dbhost = configDict['node' + str(currentNodeNum) + '.hostname']
             dbport = int(configDict['node' + str(currentNodeNum) + '.port'])
             # print('will connect to node' + str(currentNodeNum) + ' at IP:' + dbhost + ' and port:' + str(dbport))
-            t = Thread(target=CreateNodeDatabase, args=(ddlSQL, dbhost, dbport, currentNodeNum, ))
+            t = Thread(target=SendDDLToNode, args=(ddlSQL, dbhost, dbport, currentNodeNum, ))
             t.start()
-            # create a database in x container
-            # CreateNodeDatabase(ddlSQL, dbhost, dbport)
     else:
-          print("runDDL.py: ERROR need at least 3 arguments to run properly (e.g. \"python3 runDDL.py cluster.cfg plants.sql\"")
+          print(__file__ + ': ERROR need at least 3 arguments to run properly (e.g. \"python3 runDDL.py cluster.cfg plants.sql\"')
 
 
 
@@ -98,8 +142,6 @@ def ParseConfig(clustercfg):
     '''config = configparser.ConfigParser()
     config.read(clustercfg)
     print("Config has been read")
-
-
 
     configDict = {'numnodes': config.get('clustercfg', 'numnodes'),
             'catalog.hostname': config.get('clustercfg', 'catalog.hostname'),
@@ -114,7 +156,7 @@ def ParseConfig(clustercfg):
     for config in configArray:
         if config:
             c = config.split("=")
-            print (c[0] + ' is ' + c[1])
+            # print (c[0] + ' is ' + c[1])
             configKey = c[0]
             configValue = c[1]
             if(('node' in configKey or 'catalog' in configKey) and 'hostname' in configKey):

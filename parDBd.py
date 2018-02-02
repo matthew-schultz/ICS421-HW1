@@ -48,5 +48,5 @@ if __name__ == '__main__':
     try:
         Main()
     except OSError:
-        print('failed due to OSError')
+        print('failed due to OSError; please retry in a minute')
 
