@@ -6,28 +6,27 @@ import sys
 from threading import Thread
 # import Error
 
-def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum):
+def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum, catDbName, nodeDbName):
     print('runDDL.py: connecting to host ' + dbhost)
 
     mySocket = socket.socket()
     try:
         mySocket.connect((dbhost, dbport))
-        print('runDDL.py: send ' + str(ddlSQL))
-        mySocket.send(ddlSQL.encode())
+        packet = '<dbname>' + nodeDbName + '</dbname>' + ddlSQL
+        print('runDDL.py: send data "' + packet + '"')
+        mySocket.send(packet.encode())
         data = str(mySocket.recv(1024).decode())
         print('runDDL.py: recv ' + data + ' from host ' + dbhost)
 
         if(data == 'success'):
             tname = getTname(ddlSQL)
-            print('tname is ' + tname)
-
+            # print('tname is ' + tname)
             catSQL = 'DELETE FROM dtables WHERE nodeid='+ str(nodeNum) + ';'            
-
             if SQLIsCreate(ddlSQL):
-                print ('ddlSQL is a create statement')
+                # print ('ddlSQL is a create statement')
                 catSQL = 'TRUNCATE TABLE tablename;'
                 catSQL = 'INSERT INTO dtables VALUES ("'+ tname +'","","' + dbhost + '","","",0,' + str(nodeNum) + ',NULL,NULL,NULL)'
-            runSQL(catSQL)
+            RunSQL(catSQL, catDbName)
             # print('runDDL.py: ' + catSQL)
             # print('')
     except OSError:
@@ -35,10 +34,10 @@ def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum):
     mySocket.close()
 
 
-def runSQL(sql):
+def RunSQL(sql, dbname):
     print('runDDL.py: executing sql statement ' + sql) 
     try:
-        sqlConn = sqlite3.connect('catalog.db')
+        sqlConn = sqlite3.connect(dbname)
         c = sqlConn.cursor()
         c.execute(sql)
         print(str(c.fetchall()))
@@ -58,8 +57,8 @@ def SQLIsCreate(sql):
     return isInsert
 
 
-def CreateCatalog():
-    sqlConn = sqlite3.connect('catalog.db')
+def CreateCatalog(dbname):
+    sqlConn = sqlite3.connect(dbname)
     c = sqlConn.cursor()
     # catSQL = 'DROP TABLE dtables;\n'
     catSQL = '''CREATE TABLE IF not exists dtables(tname char(32), 
@@ -115,16 +114,19 @@ def Main():
         with open(ddlfile, 'r') as myfile:
             ddlSQL=myfile.read().replace('\n', '')
         # print("sql string is " + ddlSQL)
-
-        catMsg = CreateCatalog()
+        catDbName = configDict['catalog.db']
+        catMsg = CreateCatalog(catDbName)
         print(__file__ + ': CreateCatalog() returned: ' + catMsg)
 
+        print('catalog filename is ' + catDbName)
         #CreateDatabase(3,  ddlSQL)
         for currentNodeNum in range(1, int(configDict['numnodes']) + 1):
             dbhost = configDict['node' + str(currentNodeNum) + '.hostname']
             dbport = int(configDict['node' + str(currentNodeNum) + '.port'])
+            nodeDbName = configDict['node' + str(currentNodeNum) + '.db']
+
             # print('will connect to node' + str(currentNodeNum) + ' at IP:' + dbhost + ' and port:' + str(dbport))
-            t = Thread(target=SendDDLToNode, args=(ddlSQL, dbhost, dbport, currentNodeNum, ))
+            t = Thread(target=SendDDLToNode, args=(ddlSQL, dbhost, dbport, currentNodeNum, catDbName, nodeDbName, ))
             t.start()
     else:
           print(__file__ + ': ERROR need at least 3 arguments to run properly (e.g. \"python3 runDDL.py cluster.cfg plants.sql\"')
@@ -132,15 +134,7 @@ def Main():
 
 
 def ParseConfig(clustercfg):
-    '''config = configparser.ConfigParser()
-    config.read(clustercfg)
-    print("Config has been read")
-
-    configDict = {'numnodes': config.get('clustercfg', 'numnodes'),
-            'catalog.hostname': config.get('clustercfg', 'catalog.hostname'),
-            'node1.hostname': config.get('clustercfg', 'node1.hostname'),
-            'node2.hostname': config.get('clustercfg', 'node2.hostname'),
-            'port': config.get('clustercfg', 'port')}'''
+    print(__file__ +': reading config file "' + clustercfg + '"')
     file = open(clustercfg)
     content = file.read()
     configArray = content.split("\n")
@@ -165,7 +159,7 @@ def ParseConfig(clustercfg):
                 print('configPort is ' + configPort)
                 print('configDb is ' + configDb)'''        
                 configDict[nodename + '.port'] = configPort
-                configDict[nodename + '.db'] = configDb
+                configDict[nodename + '.db'] = configDb + '.db'
                 configValue = configIP
             configDict[configKey]=configValue
         '''#configList.append(c)[1]
@@ -173,6 +167,7 @@ def ParseConfig(clustercfg):
                 configDict[c[0]] = c[1]'''
 
     # print ('cfg dictionary is ' + str(configDict))
+    print(__file__ +': config file "' + clustercfg + '" read successfully')
     file.close()
     return configDict
 

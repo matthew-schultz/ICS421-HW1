@@ -4,6 +4,17 @@ import sqlite3
 import sys
 #import sqlite3.OperationalError
 
+def GetDbFilename(packet):
+    filename = ''
+    filename = packet.split('</dbname>')[0]
+    filename = filename.split('<dbname>')[1]
+    return filename
+
+
+def GetSQL(packet):
+     sql = ''
+     sql = packet.split('</dbname>')[1]
+     return sql
 
 def Main():
     if(len(sys.argv) >= 3):
@@ -17,10 +28,13 @@ def Main():
         mySocket.listen(1)
         runDDLConn, addr = mySocket.accept()
         print ("parDBd: Connection from " + str(addr))
-        ddlSQL = runDDLConn.recv(1024).decode()
-        if not ddlSQL:
+        packet = runDDLConn.recv(1024).decode()
+        if not packet:
             return
-        print ("parDBd: recv " + str(ddlSQL))
+        print ("parDBd: recv " + str(packet))
+        dbfilename = GetDbFilename(packet)
+        print('dbfilename is ' + dbfilename)
+        ddlSQL = GetSQL(packet)
 
         sqlConn = sqlite3.connect('plants.db')
         c = sqlConn.cursor()
@@ -34,6 +48,7 @@ def Main():
             tableCreatedMsg = 'failure'
         else:
             tableCreatedMsg = 'success'
+        c.close()
         sqlConn.commit()
         sqlConn.close()
 
