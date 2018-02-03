@@ -40,7 +40,7 @@ def Main():
         response = tableCreatedMsg
         print(response)
 
-        print ("parDBd: send response " + str(response))
+        print ('parDBd: send response "' + str(response) +  '" for sql "' + str(ddlSQL) + '"')
         runDDLConn.send(response.encode())
 
         runDDLConn.close()
