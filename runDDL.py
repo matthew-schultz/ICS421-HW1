@@ -24,7 +24,7 @@ def SendDDLToNode(ddlSQL, dbhost, dbport, nodeNum, catDbName, nodeDbName):
             catSQL = 'DELETE FROM dtables WHERE nodeid='+ str(nodeNum) + ';'            
             if SQLIsCreate(ddlSQL):
                 # print ('ddlSQL is a create statement')
-                catSQL = 'TRUNCATE TABLE tablename;'
+                # catSQL = 'TRUNCATE TABLE tablename;'
                 catSQL = 'INSERT INTO dtables VALUES ("'+ tname +'","","' + dbhost + '","","",0,' + str(nodeNum) + ',NULL,NULL,NULL)'
             RunSQL(catSQL, catDbName)
             # print('runDDL.py: ' + catSQL)

@@ -36,7 +36,7 @@ def Main():
         print('dbfilename is ' + dbfilename)
         ddlSQL = GetSQL(packet)
 
-        sqlConn = sqlite3.connect('plants.db')
+        sqlConn = sqlite3.connect(dbfilename)
         c = sqlConn.cursor()
 
     # Create table
